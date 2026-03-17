@@ -1,10 +1,43 @@
 pipeline {
-  agent {
-    docker {
-      image 'abhishekf5/maven-abhishek-docker-agent:v1'
-      args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+    agent none   // ← change to none at top level
+    
+    stages {
+        stage('Checkout') { ... }
+        
+        stage('Build and Test') {
+            agent {
+                docker {
+                    image 'abhishekf5/maven-abhishek-docker-agent:v1'
+                    args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
+            steps { ... }
+        }
+
+        stage('Static Code Analysis') {
+            agent {
+                docker {
+                    image 'maven:3.9.6-eclipse-temurin-17'  // Java 17 for Sonar
+                    args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
+            environment {
+                SONAR_URL = "http://172.31.91.112:9000"
+            }
+            steps { ... }
+        }
+
+        stage('Build and Push Docker Image') {
+            agent {
+                docker {
+                    image 'abhishekf5/maven-abhishek-docker-agent:v1'  // has Docker
+                    args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
+            steps { ... }
+        }
     }
-  }
+}
   stages {
     stage('Checkout') {
       steps {
